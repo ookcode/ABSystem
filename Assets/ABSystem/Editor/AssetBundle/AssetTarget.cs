@@ -218,8 +218,14 @@ namespace Tangzx.ABSystem
             switch (this.exportType)
             {
                 case AssetBundleExportType.Standalone:
+                    rootSet.Add(this);
+                    break;
                 case AssetBundleExportType.Root:
                     rootSet.Add(this);
+                    foreach (AssetTarget item in _dependChildrenSet)
+                    {
+                        item.GetRoot(rootSet);
+                    }
                     break;
                 default:
                     foreach (AssetTarget item in _dependChildrenSet)
