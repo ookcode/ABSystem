@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     public class AssetBundleData
     {

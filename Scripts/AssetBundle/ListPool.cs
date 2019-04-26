@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     /// <summary>
-    /// ´ÓUGUIÔ´ÂëÖĞÅ²¹ıÀ´µÄ
+    /// ä»UGUIæºç ä¸­æŒªè¿‡æ¥çš„
     /// </summary>
     /// <typeparam name="T"></typeparam>
     internal static class ListPool<T>

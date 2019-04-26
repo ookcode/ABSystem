@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     public class AssetBundleInfo
     {
@@ -161,16 +161,32 @@ namespace Tangzx.ABSystem
             return null;
         }
 
+        Object Load(string name)
+        {
+            Object asset = null;
+            if (bundle) {
+                asset = bundle.LoadAsset(name);
+            }
+            if(asset == null) {
+                foreach(var info in deps) {
+                    return info.Load(name);
+                }
+            }
+            return asset;
+        }
+
+        public virtual Object LoadAsset(Object user, string name)
+        {
+            string path = string.Format("{0}/{1}", AppConfigs.AssetsPath, name);
+            Object asset = Load(path);
+            if (asset)
+                Retain(user);
+            return asset;
+        }
+
         public T LoadAsset<T>(Object user, string name) where T : Object
         {
-            if (bundle)
-            {
-                T asset = bundle.LoadAsset<T>(name);
-                if (asset)
-                    Retain(user);
-                return asset;
-            }
-            return null;
+            return LoadAsset(user, name) as T;
         }
 
         /// <summary>
@@ -267,12 +283,9 @@ namespace Tangzx.ABSystem
             {
                 if (_mainObject == null && _isReady)
                 {
-#if UNITY_5 || UNITY_2017_1_OR_NEWER
                     string[] names = bundle.GetAllAssetNames();
-                    _mainObject = bundle.LoadAsset(names[0]);
-#else
-                _mainObject = bundle.mainAsset;
-#endif
+                    _mainObject = bundle.LoadAsset(data.shortName);
+
                     //优化：如果是根，则可以 unload(false) 以节省内存
                     if (data.compositeType == AssetBundleExportType.Root)
                         UnloadBundle();

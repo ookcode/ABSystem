@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     /// <summary>
     /// 在IOS下的加载

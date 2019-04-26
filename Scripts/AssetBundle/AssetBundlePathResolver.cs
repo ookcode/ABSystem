@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using UnityEngine;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     /// <summary>
     /// AB 打包及运行时路径解决器
@@ -28,7 +28,7 @@ namespace Tangzx.ABSystem
         /// <summary>
         /// AB打包的原文件HashCode要保存到的路径，下次可供增量打包
         /// </summary>
-        public virtual string HashCacheSaveFile { get { return "Assets/AssetBundles/cache.txt"; } }
+        public virtual string HashCacheSaveFile { get { return "Assets/External/AssetBundles/cache.txt"; } }
         /// <summary>
         /// 在编辑器模型下将 abName 转为 Assets/... 路径
         /// 这样就可以不用打包直接用了
@@ -95,11 +95,11 @@ namespace Tangzx.ABSystem
             {
                 if (cacheDir == null)
                 {
-#if UNITY_EDITOR
-                    string dir = string.Format("{0}/{1}", Application.streamingAssetsPath, BundleSaveDirName);
-#else
+// #if UNITY_EDITOR // TODO: YAO
+//                     string dir = string.Format("{0}/{1}", Application.streamingAssetsPath, BundleSaveDirName);
+// #else
 					string dir = string.Format("{0}/AssetBundles", Application.persistentDataPath);
-#endif
+// #endif
                     cacheDir = new DirectoryInfo(dir);
                     if (!cacheDir.Exists)
                         cacheDir.Create();

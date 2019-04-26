@@ -1,15 +1,10 @@
-﻿#if !AB_MODE && UNITY_EDITOR
-#else
-#define _AB_MODE_
-#endif
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     public enum LoadState
     {
@@ -146,9 +141,9 @@ namespace Tangzx.ABSystem
         {
             string depFile = string.Format("{0}/{1}", pathResolver.BundleCacheDir, pathResolver.DependFileName);
             //编辑器模式下测试AB_MODE，直接读取
-#if UNITY_EDITOR
-            depFile = pathResolver.GetBundleSourceFile(pathResolver.DependFileName, false);
-#endif
+// #if UNITY_EDITOR // TODO:YAO
+//             depFile = pathResolver.GetBundleSourceFile(pathResolver.DependFileName, false);
+// #endif
 
             if (File.Exists(depFile))
             {
@@ -165,7 +160,7 @@ namespace Tangzx.ABSystem
                 if (w.error == null)
                 {
                     Init(new MemoryStream(w.bytes), null);
-                    File.WriteAllBytes(depFile, w.bytes);
+                    // File.WriteAllBytes(depFile, w.bytes); // TODO: YAO
                 }
                 else
                 {
@@ -291,13 +286,25 @@ namespace Tangzx.ABSystem
                 }
 
                 _progress = new AssetBundleLoadProgress();
-                _progress.total = _currentLoadQueue.Count;
+                
 
                 e = loaders.GetEnumerator();
+                HashSet<AssetBundleLoader> depLoaders = new HashSet<AssetBundleLoader>();
+
                 while (e.MoveNext())
                 {
                     e.Current.Start();
+                    depLoaders.Add(e.Current);
+                    if(e.Current.depLoaders != null) {
+                        foreach(var loader in e.Current.depLoaders) {
+                        depLoaders.Add(loader);
+                        }
+                    }  
                 }
+
+                _progress.total = depLoaders.Count;
+                _progress.left = _progress.total;
+
                 ListPool<AssetBundleLoader>.Release(loaders);
             }
         }
@@ -379,7 +386,8 @@ namespace Tangzx.ABSystem
             if (onProgress != null)
             {
                 _progress.loader = loader;
-                _progress.complete = _progress.total - _currentLoadQueue.Count;
+                --_progress.left;
+                _progress.percent = 1 - (_progress.left / (float)_progress.total);
                 onProgress(_progress);
             }
 

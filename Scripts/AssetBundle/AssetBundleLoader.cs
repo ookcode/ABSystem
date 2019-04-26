@@ -3,7 +3,7 @@ using System.Collections;
 using System.IO;
 using UnityEngine;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     /// <summary>
     /// Loader 父类
@@ -19,7 +19,7 @@ namespace Tangzx.ABSystem
         public AssetBundleManager bundleManager;
         public LoadState state = LoadState.State_None;
 
-        protected AssetBundleLoader[] depLoaders;
+        public AssetBundleLoader[] depLoaders {get; protected set;}
 
         private int _prority;
 

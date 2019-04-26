@@ -1,9 +1,8 @@
 ﻿#if UNITY_EDITOR
-
-#if AB_MODE
+#if _AB_MODE_
 using System.Collections;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     /// <summary>
     /// 编辑器模式并启用AB_MODE下用的加载器
@@ -23,7 +22,7 @@ using System.Collections;
 using UnityEditor;
 using UnityEngine;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     /// <summary>
     /// 编辑器模式下用的加载器
@@ -40,6 +39,13 @@ namespace Tangzx.ABSystem
                     Object mainObject = AssetDatabase.LoadMainAssetAtPath(newPath);
                     return mainObject;
                 }
+            }
+
+            public override Object LoadAsset(Object user, string name)
+            {
+                string path = string.Format("{0}/{1}", AppConfigs.AssetsPath, name);
+                Object mainObject = AssetDatabase.LoadMainAssetAtPath(path);
+                return mainObject;
             }
         }
 

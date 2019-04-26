@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     class AssetCacheInfo
     {
@@ -13,11 +13,6 @@ namespace Tangzx.ABSystem
         /// 源文件的hash，比较变化
         /// </summary>
         public string fileHash;
-        /// <summary>
-        /// 源文件meta文件的hash，部分类型的素材需要结合这个来判断变化
-        /// 如：Texture
-        /// </summary>
-        public string metaHash;
         /// <summary>
         /// 上次打好的AB的CRC值，用于增量判断
         /// </summary>
@@ -88,7 +83,6 @@ namespace Tangzx.ABSystem
 
                     AssetCacheInfo cache = new AssetCacheInfo();
                     cache.fileHash = sr.ReadLine();
-                    cache.metaHash = sr.ReadLine();
                     cache.bundleCrc = sr.ReadLine();
                     int depsCount = Convert.ToInt32(sr.ReadLine());
                     cache.depNames = new string[depsCount];

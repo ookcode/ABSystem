@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     public class AssetBundleBuildPanel : EditorWindow
     {
@@ -21,11 +21,31 @@ namespace Tangzx.ABSystem
             if (config == null)
                 return;
 
-#if UNITY_5 || UNITY_2017_1_OR_NEWER
-			ABBuilder builder = new AssetBundleBuilder5x(new AssetBundlePathResolver());
-#else
-			ABBuilder builder = new AssetBundleBuilder4x(new AssetBundlePathResolver());
-#endif
+			ABBuilder builder = new AssetBundleBuilder(new AssetBundlePathResolver());
+            builder.SetDataWriter(config.depInfoFileFormat == AssetBundleBuildConfig.Format.Text ? new AssetBundleDataWriter() : new AssetBundleDataBinaryWriter());
+
+            builder.Begin();
+
+            for (int i = 0; i < config.filters.Count; i++)
+            {
+                AssetBundleFilter f = config.filters[i];
+                if (f.valid)
+                    builder.AddRootTargets(new DirectoryInfo(f.path), new string[] { f.filter });
+            }
+
+            builder.Export();
+            builder.End();
+        }
+
+        [MenuItem("ABSystem/Sign AssetBundles")]
+        static void SignAssetBundles()
+        {
+            AssetBundleBuildConfig config = LoadAssetAtPath<AssetBundleBuildConfig>(savePath);
+
+            if (config == null)
+                return;
+
+			ABBuilder builder = new AssetBundleBuilder(new AssetBundlePathResolver(), true);
             builder.SetDataWriter(config.depInfoFileFormat == AssetBundleBuildConfig.Format.Text ? new AssetBundleDataWriter() : new AssetBundleDataBinaryWriter());
 
             builder.Begin();
@@ -43,14 +63,10 @@ namespace Tangzx.ABSystem
 
 		static T LoadAssetAtPath<T>(string path) where T:Object
 		{
-#if UNITY_5 || UNITY_2017_1_OR_NEWER
 			return AssetDatabase.LoadAssetAtPath<T>(path);
-#else
-			return (T)AssetDatabase.LoadAssetAtPath(path, typeof(T));
-#endif
 		}
 
-        const string savePath = "Assets/ABSystem/config.asset";
+        const string savePath = "Assets/External/ABSystem/config.asset";
 
         private AssetBundleBuildConfig _config;
         private ReorderableList _list;
@@ -159,6 +175,7 @@ namespace Tangzx.ABSystem
             }
 
             bool execBuild = false;
+            bool execSign = false;
             //tool bar
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
             {
@@ -174,6 +191,10 @@ namespace Tangzx.ABSystem
                 if (GUILayout.Button("Build", EditorStyles.toolbarButton))
                 {
                     execBuild = true;
+                }
+                if (GUILayout.Button("Sign", EditorStyles.toolbarButton))
+                {
+                    execSign = true;
                 }
             }
             GUILayout.EndHorizontal();
@@ -206,12 +227,21 @@ namespace Tangzx.ABSystem
 
             if (execBuild)
                 Build();
+
+            if (execSign)
+                Sign();
         }
 
         private void Build()
         {
             Save();
             BuildAssetBundles();
+        }
+
+        private void Sign()
+        {
+            Save();
+            SignAssetBundles();
         }
 
         void Save()

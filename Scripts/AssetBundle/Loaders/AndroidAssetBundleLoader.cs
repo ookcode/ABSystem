@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     /// <summary>
     /// 注意：未经测试，不要用

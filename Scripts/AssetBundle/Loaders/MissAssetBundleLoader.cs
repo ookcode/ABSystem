@@ -1,4 +1,4 @@
-﻿namespace Tangzx.ABSystem
+﻿namespace ABSystem
 {
     class MissAssetBundleLoader : AssetBundleLoader
     {

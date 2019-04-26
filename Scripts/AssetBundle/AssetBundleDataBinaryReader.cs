@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     /// <summary>
     /// 二进制文件格式说明

@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Tangzx.ABSystem
+namespace ABSystem
 {
     public enum AssetType
     {
@@ -63,8 +63,6 @@ namespace Tangzx.ABSystem
         private bool _isDepTreeChanged = false;
         //上次打包的信息（用于增量打包）
         private AssetCacheInfo _cacheInfo;
-        //.meta 文件的Hash
-        private string _metaHash;
         //上次打好的AB的CRC值（用于增量打包）
         private string _bundleCrc;
         //是否是新打包的
@@ -88,39 +86,6 @@ namespace Tangzx.ABSystem
             this.bundleSavePath = Path.Combine(AssetBundleUtils.pathResolver.BundleSavePath, bundleName);
 
             _isFileChanged = true;
-            _metaHash = "0";
-        }
-
-        /// <summary>
-        /// Texture
-        /// AudioClip
-        /// Mesh
-        /// Model
-        /// Shader
-        /// 这些类型的Asset的一配置是放在.meta中的，所以要监视它们的变化
-        /// 而在5x中系统会自己处理的，不用管啦
-        /// </summary>
-        void LoadMetaHashIfNecessary()
-        {
-            bool needLoad = false;
-            if (typeof(Texture).IsInstanceOfType(asset) ||
-                typeof(AudioClip).IsInstanceOfType(asset) ||
-                typeof(Mesh).IsInstanceOfType(asset) ||
-                typeof(Shader).IsInstanceOfType(asset) )
-            {
-                needLoad = true;
-            }
-
-            if (!needLoad)
-            {
-                AssetImporter importer = AssetImporter.GetAtPath(assetPath);
-                needLoad = typeof(ModelImporter).IsInstanceOfType(importer);
-            }
-
-            if (needLoad)
-            {
-                _metaHash = AssetBundleUtils.GetFileHash(assetPath + ".meta");
-            }
         }
 
         /// <summary>
@@ -130,12 +95,8 @@ namespace Tangzx.ABSystem
         {
             if (_isAnalyzed) return;
             _isAnalyzed = true;
-
-#if !UNITY_5
-            LoadMetaHashIfNecessary();
-#endif
             _cacheInfo = AssetBundleUtils.GetCacheInfo(assetPath);
-            _isFileChanged = _cacheInfo == null || !_cacheInfo.fileHash.Equals(GetHash()) || !_cacheInfo.metaHash.Equals(_metaHash);
+            _isFileChanged = _cacheInfo == null || !_cacheInfo.fileHash.Equals(GetHash());
             if (_cacheInfo != null)
             {
                 _bundleCrc = _cacheInfo.bundleCrc;
@@ -144,11 +105,12 @@ namespace Tangzx.ABSystem
             }
 
             Object[] deps = EditorUtility.CollectDependencies(new Object[] { asset });
-#if UNITY_5 || UNITY_2017_1_OR_NEWER
+
             List<Object> depList = new List<Object>();
             for (int i = 0; i < deps.Length; i++)
             {
                 Object o = deps[i];
+                
                 //不包含脚本对象
                 //不包含LightingDataAsset对象
                 if (o is MonoScript || o is LightingDataAsset)
@@ -162,20 +124,6 @@ namespace Tangzx.ABSystem
                 depList.Add(o);
             }
             deps = depList.ToArray();
-#else
-            //提取 resource.builtin
-            for (int i = 0; i < deps.Length; i++)
-            {
-                Object dep = deps[i];
-                string path = AssetDatabase.GetAssetPath(dep);
-                if (path.StartsWith("Resources"))
-                {
-                    AssetTarget builtinAsset = AssetBundleUtils.Load(dep);
-                    this.AddDependParent(builtinAsset);
-                    builtinAsset.Analyze();
-                }
-            }
-#endif
 
             var res = from s in deps
                       let obj = AssetDatabase.GetAssetPath(s)
@@ -186,7 +134,7 @@ namespace Tangzx.ABSystem
             {
                 if (File.Exists(paths[i]) == false)
                 {
-                    //Debug.Log("invalid:" + paths[i]);
+                    // Debug.Log("invalid:" + paths[i]);
                     continue;
                 }
                 FileInfo fi = new FileInfo(paths[i]);
@@ -213,19 +161,13 @@ namespace Tangzx.ABSystem
             }
         }
 
-        private void GetRoot(HashSet<AssetTarget> rootSet)
+        public void GetRoot(HashSet<AssetTarget> rootSet)
         {
             switch (this.exportType)
             {
                 case AssetBundleExportType.Standalone:
-                    rootSet.Add(this);
-                    break;
                 case AssetBundleExportType.Root:
                     rootSet.Add(this);
-                    foreach (AssetTarget item in _dependChildrenSet)
-                    {
-                        item.GetRoot(rootSet);
-                    }
                     break;
                 default:
                     foreach (AssetTarget item in _dependChildrenSet)
@@ -540,56 +482,10 @@ namespace Tangzx.ABSystem
                 return AssetBundleUtils.GetFileHash(file.FullName);
         }
 
-#if UNITY_4 || UNITY_4_6
-        public void BuildBundle(BuildAssetBundleOptions options)
-        {
-            string savePath = Path.Combine(Path.GetTempPath(), bundleName);
-
-            this.isExported = true;
-
-            var children = dependencies;
-
-            Object[] assets = new Object[children.Count + 1];
-            assets[0] = asset;
-
-            for (int i = 0; i < children.Count; i++)
-            {
-                assets[i + 1] = children[i].asset;
-            }
-
-            uint crc = 0;
-            if (file.Extension.EndsWith("unity"))
-            {
-                BuildPipeline.BuildStreamedSceneAssetBundle(
-                    new string[] { file.FullName },
-                    savePath,
-                    EditorUserBuildSettings.activeBuildTarget,
-                    out crc,
-                    BuildOptions.UncompressedAssetBundle);
-            }
-            else
-            {
-                BuildPipeline.BuildAssetBundle(
-                    asset,
-                    assets,
-                    savePath,
-                    out crc,
-                    options,
-                    EditorUserBuildSettings.activeBuildTarget);
-            }
-
-            bundleCrc = crc.ToString();
-
-            if (_isNewBuild)
-                File.Copy(savePath, bundleSavePath, true);
-        }
-#endif
-
         public void WriteCache(StreamWriter sw)
         {
             sw.WriteLine(this.assetPath);
             sw.WriteLine(GetHash());
-            sw.WriteLine(_metaHash);
             sw.WriteLine(this._bundleCrc);
             HashSet<AssetTarget> deps = new HashSet<AssetTarget>();
             this.GetDependencies(deps);
