@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using UnityEngine;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 namespace ABSystem
 {
     /// <summary>
@@ -16,19 +18,24 @@ namespace ABSystem
         }
 
         /// <summary>
-        /// AB 保存的路径相对于 Assets/StreamingAssets 的名字
+        /// AB 保存的目录名字
         /// </summary>
         public virtual string BundleSaveDirName { get { return "AssetBundles"; } }
+
+        /// <summary>
+        /// Luac 保存的目录名字
+        /// </summary>
+        public virtual string LuacSaveDirName { get { return "Lua"; } }
 
 #if UNITY_EDITOR
         /// <summary>
         /// AB 保存的路径
         /// </summary>
-        public string BundleSavePath { get { return "Assets/StreamingAssets/" + BundleSaveDirName; } }
+        public string BundleSavePath { get { return string.Format("{0}/{1}/{2}", "Publish", EditorUserBuildSettings.activeBuildTarget, BundleSaveDirName); } }
         /// <summary>
-        /// AB打包的原文件HashCode要保存到的路径，下次可供增量打包
+        /// Luac 保存的路径
         /// </summary>
-        public virtual string HashCacheSaveFile { get { return "Assets/External/AssetBundles/cache.txt"; } }
+        public string LuacSavePath { get { return string.Format("{0}/{1}/{2}", "Publish", EditorUserBuildSettings.activeBuildTarget, LuacSaveDirName); } }
         /// <summary>
         /// 在编辑器模型下将 abName 转为 Assets/... 路径
         /// 这样就可以不用打包直接用了
@@ -60,9 +67,9 @@ namespace ABSystem
             string filePath = null;
 #if UNITY_EDITOR
             if (forWWW)
-                filePath = string.Format("file://{0}/StreamingAssets/{1}/{2}", Application.dataPath, BundleSaveDirName, path);
+                filePath = string.Format("file://{0}/Publish/StandaloneWindows64/{1}/{2}", new DirectoryInfo(Application.dataPath + "/..").FullName.Replace("\\", "/"), BundleSaveDirName, path);
             else
-                filePath = string.Format("{0}/StreamingAssets/{1}/{2}", Application.dataPath, BundleSaveDirName, path);
+                filePath = string.Format("{0}/Publish/StandaloneWindows64/{1}/{2}", new DirectoryInfo(Application.dataPath + "/..").FullName.Replace("\\", "/"), BundleSaveDirName, path);
 #elif UNITY_ANDROID
             if (forWWW)
                 filePath = string.Format("jar:file://{0}!/assets/{1}/{2}", Application.dataPath, BundleSaveDirName, path);

@@ -283,7 +283,7 @@ namespace ABSystem
             {
                 if (_mainObject == null && _isReady)
                 {
-                    string[] names = bundle.GetAllAssetNames();
+                    // string[] names = bundle.GetAllAssetNames(); // TODO:YAO
                     _mainObject = bundle.LoadAsset(data.shortName);
 
                     //优化：如果是根，则可以 unload(false) 以节省内存

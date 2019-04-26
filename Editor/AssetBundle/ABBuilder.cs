@@ -25,7 +25,7 @@ namespace ABSystem
         void InitDirs()
         {
             new DirectoryInfo(pathResolver.BundleSavePath).Create();
-            new FileInfo(pathResolver.HashCacheSaveFile).Directory.Create();
+            new DirectoryInfo(pathResolver.LuacSavePath).Create();
         }
 
         public void Begin()
@@ -36,8 +36,6 @@ namespace ABSystem
 
         public void End()
         {
-            AssetBundleUtils.SaveCache();
-            AssetBundleUtils.ClearCache();
             EditorUtility.ClearProgressBar();
         }
 

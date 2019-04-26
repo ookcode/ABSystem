@@ -154,6 +154,7 @@ namespace ABSystem
             else
             {
                 string srcURL = pathResolver.GetBundleSourceFile(pathResolver.DependFileName);
+                Debug.Log(srcURL);
                 WWW w = new WWW(srcURL);
                 yield return w;
 

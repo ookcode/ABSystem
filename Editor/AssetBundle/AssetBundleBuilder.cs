@@ -71,11 +71,8 @@ namespace ABSystem
                 BuildPipeline.BuildAssetBundles(pathResolver.BundleSavePath, list.ToArray(), BuildAssetBundleOptions.UncompressedAssetBundle, EditorUserBuildSettings.activeBuildTarget);
             }
 
-#if UNITY_5_1 || UNITY_5_2
-            AssetBundle ab = AssetBundle.CreateFromFile(pathResolver.BundleSavePath + "/AssetBundles");
-#else
             AssetBundle ab = AssetBundle.LoadFromFile(pathResolver.BundleSavePath + "/AssetBundles");
-#endif
+            
             AssetBundleManifest manifest = ab.LoadAsset("AssetBundleManifest") as AssetBundleManifest;
             //hash
             for (int i = 0; i < all.Count; i++)
@@ -93,6 +90,11 @@ namespace ABSystem
 
             AssetDatabase.RemoveUnusedAssetBundleNames();
             AssetDatabase.Refresh();
+
+            // 处理lua
+            FileUtil.DeleteFileOrDirectory(pathResolver.LuacSavePath);
+            // TODO：加密
+            FileUtil.CopyFileOrDirectory(AppConfigs.AssetsExportPath + "/" + AppConfigs.ScriptPath, pathResolver.LuacSavePath);
         }
     }
 }

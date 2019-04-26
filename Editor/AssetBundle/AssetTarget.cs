@@ -40,10 +40,6 @@ namespace ABSystem
         /// </summary>
         public AssetBundleExportType exportType = AssetBundleExportType.Asset;
         /// <summary>
-        /// 保存地址
-        /// </summary>
-        public string bundleSavePath;
-        /// <summary>
         /// BundleName
         /// </summary>
         public string bundleName;
@@ -55,18 +51,12 @@ namespace ABSystem
         public int level = -1;
         public List<AssetTarget> levelList;
 
-        //目标文件是否已改变
-        private bool _isFileChanged = false;
         //是否已分析过依赖
         private bool _isAnalyzed = false;
-        //依赖树是否改变（用于增量打包）
-        private bool _isDepTreeChanged = false;
-        //上次打包的信息（用于增量打包）
-        private AssetCacheInfo _cacheInfo;
+
         //上次打好的AB的CRC值（用于增量打包）
         private string _bundleCrc;
-        //是否是新打包的
-        private bool _isNewBuild;
+
         /// <summary>
         /// 我要依赖的项
         /// </summary>
@@ -83,9 +73,6 @@ namespace ABSystem
             this.assetPath = assetPath;
             this.bundleShortName = file.Name.ToLower();
             this.bundleName = HashUtil.Get(AssetBundleUtils.ConvertToABName(assetPath)) + ".ab";
-            this.bundleSavePath = Path.Combine(AssetBundleUtils.pathResolver.BundleSavePath, bundleName);
-
-            _isFileChanged = true;
         }
 
         /// <summary>
@@ -95,14 +82,6 @@ namespace ABSystem
         {
             if (_isAnalyzed) return;
             _isAnalyzed = true;
-            _cacheInfo = AssetBundleUtils.GetCacheInfo(assetPath);
-            _isFileChanged = _cacheInfo == null || !_cacheInfo.fileHash.Equals(GetHash());
-            if (_cacheInfo != null)
-            {
-                _bundleCrc = _cacheInfo.bundleCrc;
-                if (_isFileChanged)
-                    Debug.Log("File was changed : " + assetPath);
-            }
 
             Object[] deps = EditorUtility.CollectDependencies(new Object[] { asset });
 
@@ -202,36 +181,6 @@ namespace ABSystem
             }
         }
 
-        /// <summary>
-        /// 判断是否依赖树变化了
-        /// 如果现在的依赖和之前的依赖不一样了则改变了，需要重新打包
-        /// </summary>
-        public void AnalyzeIfDepTreeChanged()
-        {
-            _isDepTreeChanged = false;
-            if (_cacheInfo != null)
-            {
-                HashSet<AssetTarget> deps = new HashSet<AssetTarget>();
-                GetDependencies(deps);
-
-                if (deps.Count != _cacheInfo.depNames.Length)
-                {
-                    _isDepTreeChanged = true;
-                }
-                else
-                {
-                    foreach (AssetTarget dep in deps)
-                    {
-                        if (!ArrayUtility.Contains<string>(_cacheInfo.depNames, dep.assetPath))
-                        {
-                            _isDepTreeChanged = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
         public void UpdateLevel(int level, List<AssetTarget> lvList)
         {
             this.level = level;
@@ -277,55 +226,16 @@ namespace ABSystem
             }
         }
 
-        public bool isNewBuild
-        {
-            get { return _isNewBuild; }
-        }
-
         public string bundleCrc
         {
             get { return _bundleCrc; }
             set
             {
-                _isNewBuild = value != _bundleCrc;
-                if (_isNewBuild)
+                if (value != _bundleCrc)
                 {
                     Debug.Log("Export AB : " + bundleName);
                 }
                 _bundleCrc = value;
-            }
-        }
-
-        /// <summary>
-        /// 是不是需要重编
-        /// </summary>
-        public bool needRebuild
-        {
-            get
-            {
-                if (_isFileChanged || _isDepTreeChanged)
-                    return true;
-
-                foreach (AssetTarget child in _dependChildrenSet)
-                {
-                    if (child.needRebuild)
-                        return true;
-                }
-
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// 是不是自己的原因需要重编的，有的可能是因为被依赖项的原因需要重编
-        /// </summary>
-        public bool needSelfRebuild
-        {
-            get
-            {
-                if (_isFileChanged || _isDepTreeChanged)
-                    return true;
-                return false;
             }
         }
 
@@ -355,7 +265,7 @@ namespace ABSystem
                 if (isExported)
                     return false;
 
-                bool v = needSelfExport && needRebuild;
+                bool v = needSelfExport;
 
                 return v;
             }
@@ -480,20 +390,6 @@ namespace ABSystem
                 return "0000000000";
             else
                 return AssetBundleUtils.GetFileHash(file.FullName);
-        }
-
-        public void WriteCache(StreamWriter sw)
-        {
-            sw.WriteLine(this.assetPath);
-            sw.WriteLine(GetHash());
-            sw.WriteLine(this._bundleCrc);
-            HashSet<AssetTarget> deps = new HashSet<AssetTarget>();
-            this.GetDependencies(deps);
-            sw.WriteLine(deps.Count.ToString());
-            foreach (AssetTarget at in deps)
-            {
-                sw.WriteLine(at.assetPath);
-            }
         }
     }
 }
