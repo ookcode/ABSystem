@@ -174,6 +174,13 @@ namespace ABSystem
             }
             return asset;
         }
+        
+        public virtual Object LoadAsset(string name)
+        {
+            string path = string.Format("{0}/{1}", AppConfigs.AssetsPath, name);
+            Object asset = Load(path);
+            return asset;
+        }
 
         public virtual Object LoadAsset(Object user, string name)
         {

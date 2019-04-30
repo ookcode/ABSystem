@@ -62,6 +62,10 @@ namespace ABSystem
         /// 当前是否还在加载，如果加载，则暂时不回收
         /// </summary>
         private bool _isCurrentLoading;
+        /// <summary>
+        /// 所有文件对应AB的列表
+        /// </summary>
+        private Dictionary<string, string> _allAssetDepMap = new Dictionary<string, string>();
 
         private AssetBundleLoadProgress _progress = new AssetBundleLoadProgress();
         /// <summary>
@@ -183,6 +187,20 @@ namespace ABSystem
         public string GetAssetBundleFullName(string shortFileName)
         {
             return _depInfoReader.GetFullName(shortFileName);
+        }
+
+        // 从缓存中同步加载
+        public UnityEngine.Object LoadFromCache(string path)
+        {
+            string relative = path.ToLower();
+            if(_allAssetDepMap.ContainsKey(relative)) {
+                string abName = _allAssetDepMap[relative];
+                if(_loadedAssetBundle.ContainsKey(abName)) {
+                    AssetBundleInfo info = _loadedAssetBundle[abName];
+                    return info.LoadAsset(path);
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -413,6 +431,19 @@ namespace ABSystem
                 abi = new AssetBundleInfo();
             abi.bundleName = loader.bundleName.ToLower();
             abi.bundle = assetBundle;
+
+            if(assetBundle != null) {
+                var names = assetBundle.GetAllAssetNames();
+                foreach(var name in names) {
+                    string relative = name.Substring(AppConfigs.AssetsPath.Length + 1);
+                    if(_allAssetDepMap.ContainsKey(relative)) {
+                        if(_allAssetDepMap[relative] != assetBundle.name) {
+                            Log.Error("Asset {0} both in {1} and {2}", relative, _allAssetDepMap[relative], assetBundle.name);
+                        }   
+                    }
+                    _allAssetDepMap[relative] = assetBundle.name;
+                }
+            }
             abi.data = loader.bundleData;
 
             _loadedAssetBundle[abi.bundleName] = abi;

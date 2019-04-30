@@ -41,6 +41,13 @@ namespace ABSystem
                 }
             }
 
+            public override Object LoadAsset(string name)
+            {
+                string path = string.Format("{0}/{1}", AppConfigs.AssetsPath, name);
+                Object mainObject = AssetDatabase.LoadMainAssetAtPath(path);
+                return mainObject;
+            }
+
             public override Object LoadAsset(Object user, string name)
             {
                 string path = string.Format("{0}/{1}", AppConfigs.AssetsPath, name);
